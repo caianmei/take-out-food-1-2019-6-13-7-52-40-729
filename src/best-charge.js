@@ -30,8 +30,8 @@ function getItems(countItem) {
 
 function countPrice(countItem) {
   let price = countPriceWithoutPromotion(countItem);
-  let isOutFullPrice = judgeIsOutFulReducePrice(price);
-  let fullReducePrice = getFullReducePrice(isOutFullPrice);
+  let isOutFullPriceResult = judgeIsOutFullReducePrice(price);
+  let fullReducePrice = getFullReducePrice(isOutFullPriceResult);
   let designateFoodOfferPrice = getDesignateFoodOfferPrice(countItem);
   let reduceResult = judgePrice(fullReducePrice, designateFoodOfferPrice);
   let resultPrice = countFinalyPrice(price, reduceResult.reducePrice);
@@ -79,17 +79,28 @@ function countPriceWithoutPromotion(countItem) {
   return priceWithoutPromotion;
 }
 
-function judgeIsOutFulReducePrice(price) {
-  if (Number(price) >= 30) {
-    return true;
+function judgeIsOutFullReducePrice(price) {
+  let outFullPromotion = getOutFullReducePromotion();
+  if (price >= outFullPromotion.fullPrice) {
+    return {isOutFullPrice:true,
+      fullReducePrice:Number(outFullPromotion.fullReducePrice)};
   } else {
-    return false;
+    return {isOutFullPrice:false,
+      fullReducePrice:0};
   }
 }
 
-function getFullReducePrice(isOutFullPrice) {
-  if (isOutFullPrice) {
-    return 6;
+function getOutFullReducePromotion(){
+  let fullPrommotionResult = loadPromotions()[0].type;
+  let outFullPromotionArray = fullPrommotionResult.split("减");
+  return {fullPrice:Number(outFullPromotionArray[0].replace(/[^0-9]/ig,"")),
+  fullReducePrice:Number(outFullPromotionArray[1].replace(/[^0-9]/ig,""))};
+
+}
+
+function getFullReducePrice(isOutFullPriceResult) {
+  if (isOutFullPriceResult.isOutFullPrice) {
+    return Number(isOutFullPriceResult.fullReducePrice);
   } else {
     return 0;
   }
@@ -125,7 +136,7 @@ function countCanReducePrice(canReduceItems) {
 }
 
 function judgePrice(fullReducePrice, designateFoodOfferPrice) {
-  if (Number(fullReducePrice) == 0 && Number(designateFoodOfferPrice) == 0) {
+ if (Number(fullReducePrice) == 0 && Number(designateFoodOfferPrice) == 0) {
     return {
       reducePrice: 0,
       whichWay: "cant reduce"
@@ -171,7 +182,7 @@ function printPromotionInfo(reducePrice, whichWay) {
 }
 
 function printFullReduceInfo(reducePrice) {
-  return `使用优惠:\n满30减${reducePrice}元，省${reducePrice}元\n`;
+  return `使用优惠:\n${loadPromotions()[0].type}，省${reducePrice}元\n`;
 }
 
 function printDesignateFoodOfferInfo(reducePrice) {
@@ -180,7 +191,7 @@ function printDesignateFoodOfferInfo(reducePrice) {
   for (let i = 0; i < designateFoodIds.length; i++) {
     designateFoodItemsNames += i < designateFoodIds.length - 1 ? `${findItemById(designateFoodIds[i]).name}，` : findItemById(designateFoodIds[i]).name;
   }
-  return `使用优惠:\n指定菜品半价(${designateFoodItemsNames})，省${reducePrice}元\n`;
+  return `使用优惠:\n${loadPromotions()[1].type}(${designateFoodItemsNames})，省${reducePrice}元\n`;
 }
 
 function printResultPriceInfo(resultPrice) {
